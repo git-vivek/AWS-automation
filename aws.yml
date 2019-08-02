@@ -1,0 +1,55 @@
+---
+  - name: EC2 instance launch
+    hosts: localhost
+    connection: local
+    gather_facts: False
+    become: yes
+
+    vars:
+      instance_type: t2.micro
+      security_group: group
+      image:  // ami image that you want to launch
+      region: ap-south-1
+      keypair: ak
+      count: 1
+    tasks:
+      ec2_group:
+        name: "{{ security_group }}"
+        description: The webservers security group
+        region: "{{ region }}"
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+          - proto: tcp
+            from_port: 443
+            to_port: 443
+            cidr_ip: 0.0.0.0/0
+        rules_egress:
+          - proto: all
+            cidr_ip: 0.0.0.0/0
+      ec2:
+        aws_access_key: "{{ aws_access_key }}"
+        aws_secret_key: "{{ aws_secret_key }}"
+        group: "{{ security_group }}"
+        instance_type: "{{ instance_type }}"
+        image: "{{ image }}"
+        wait: true 
+        region: "{{ region }}"
+        keypair: "{{ keypair }}"
+        count: "{{count}}"
+        register: ec2 
+     yum:
+       name: httpd
+       state: latest
+     service:
+       name: httpd
+       state: started
+       enabled: yes
